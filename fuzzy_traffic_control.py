@@ -2,44 +2,68 @@ import numpy as np
 import skfuzzy as fuzz
 import matplotlib.pyplot as plt
 
-def interpret_memberships(universe, dict_mf, value):
-    calc_mfs = {}
+def interpret_memberships(universe, dict_mf, fuzzy_element):
+    """
+    Calculates the fuzzy membership values of fuzzy_element for the 
+    memberships defined in dict_mf
+    """
+    calc_m = {}
     for label, membership_func in dict_mf.items():
-        calc_mfs[label] = fuzz.interp_membership(
-            universe, membership_func, value
+        calc_m[label] = fuzz.interp_membership(
+            universe, membership_func, fuzzy_element
         )
-    return calc_mfs  
+    return calc_m 
 
-def urgency_rule_activation(first_antec, second_antec, consec_mf):
-    active_consec = {}
+def urgency_rule_activation(first_antec, second_antec, conseq_mf):
+    """
+    Assembles the rule base and calculates the fuzzy membership values of the 
+    antecedents for each urgency fuzzy set
+    """
+    active_conseq = {}
     rules = [-1]*17
 
-    # active_consec['zero'] = np.fmin(np.fmin(first_antec['zero'], second_antec['negligible']), consec_mf['zero'])
-    rules[1] = np.fmin(np.fmin(first_antec['zero'], second_antec['negligible']), consec_mf['zero'])
-    rules[2] = np.fmin(np.fmin(first_antec['zero'], second_antec['short']), consec_mf['low'])
-    rules[3] = np.fmin(np.fmin(first_antec['zero'], second_antec['medium']), consec_mf['medium'])
-    rules[4] = np.fmin(np.fmin(first_antec['zero'], second_antec['long']), consec_mf['high'])
-    rules[5] = np.fmin(np.fmin(first_antec['few'], second_antec['negligible']), consec_mf['zero'])
-    rules[6] = np.fmin(np.fmin(first_antec['few'], second_antec['short']), consec_mf['low'])
-    rules[7] = np.fmin(np.fmin(first_antec['few'], second_antec['medium']), consec_mf['medium'])
-    rules[8] = np.fmin(np.fmin(first_antec['few'], second_antec['long']), consec_mf['high'])
-    rules[9] = np.fmin(np.fmin(first_antec['medium'], second_antec['negligible']), consec_mf['low'])
-    rules[10] = np.fmin(np.fmin(first_antec['medium'], second_antec['short']), consec_mf['medium'])
-    rules[11] = np.fmin(np.fmin(first_antec['medium'], second_antec['medium']), consec_mf['medium'])
-    rules[12] = np.fmin(np.fmin(first_antec['medium'], second_antec['long']), consec_mf['high'])
-    rules[13] = np.fmin(np.fmin(first_antec['many'], second_antec['negligible']), consec_mf['medium'])
-    rules[14] = np.fmin(np.fmin(first_antec['many'], second_antec['short']), consec_mf['high'])
-    rules[15] = np.fmin(np.fmin(first_antec['many'], second_antec['medium']), consec_mf['high'])
-    rules[16] = np.fmin(np.fmin(first_antec['many'], second_antec['long']), consec_mf['high'])
-    
-    active_consec['zero'] = np.fmax(rules[1], rules[5])
-    active_consec['low'] = np.fmax(np.fmax(rules[2], rules[6]), rules[9])
-    active_consec['medium'] = np.fmax(np.fmax(np.fmax(np.fmax(rules[3], rules[7]), rules[10]), rules[11]), rules[13])
-    active_consec['high'] = np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(rules[4], rules[8]), rules[12]), rules[14]), rules[15]), rules[16])
+    # First variable of the antecedents (sum of waiting cars)
+    first_antec_values = ['zero', 'zero', 'zero', 'zero', 
+                          'few', 'few', 'few', 'few', 
+                          'medium', 'medium', 'medium', 'medium', 
+                          'many', 'many', 'many', 'many']
+    # Second variable of the antecedents (waiting time since the last green 
+    # phase)
+    second_antec_values = ['negligible', 'short', 'medium', 'long', 
+                           'negligible', 'short', 'medium', 'long', 
+                           'negligible', 'short', 'medium', 'long', 
+                           'negligible', 'short', 'medium', 'long']
+    # Variable for the consequents
+    conseq_mf_values = ['zero', 'low', 'medium', 'high', 
+                        'zero', 'low', 'medium', 'high', 
+                        'low', 'medium', 'medium', 'high', 
+                        'medium', 'high', 'high', 'high']
+    # e.g.:
+    # antecedent = (IF sum_of_waiting_cars = zero AND waiting_time = negligible)
+    # consequent = (THEN urgency = zero)
 
-    # active_consec['low'] = np.fmin(np.fmin(first_antec['medium'], second_antec['negligible']), consec_mf['low'])
+    # Assembling the fuzzy rule base and calculating the fuzzy membership values 
+    # for the given rules
+    print("\nDEBUG\n")
+    for i, (value1, value2, value3) in enumerate(
+            zip(first_antec_values, second_antec_values, conseq_mf_values),
+            start=1):
+        rules[i] = np.fmin(np.fmin(
+            first_antec[value1], second_antec[value2]), conseq_mf[value3])
+        print(f"    {rules[i]}")
+
+    # Calculating the fuzzy membership values for the output urgency fuzzy sets 
+    # (the level of urgency)
+    # The urgency is 'zero' if rule 1 OR rule 5 is activated
+    active_conseq['zero'] = np.fmax(rules[1], rules[5])
+    # The urgency is 'low' if rule 2 OR rule 6 OR rule 9 is activated, etc...
+    active_conseq['low'] = np.fmax(np.fmax(rules[2], rules[6]), rules[9])
+    active_conseq['medium'] = np.fmax(np.fmax(np.fmax(np.fmax(
+        rules[3],rules[7]), rules[10]), rules[11]), rules[13])
+    active_conseq['high'] = np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(
+        rules[4], rules[8]), rules[12]), rules[14]), rules[15]), rules[16])
     
-    return active_consec
+    return active_conseq
 
 # Generate ranges for the membership functions
 # Sum of cars waiting in a given direction 
@@ -142,20 +166,22 @@ for ax in (ax0, ax1, ax2, ax3, ax4, ax5):
 plt.tight_layout()
 
 # TEST VARS
-q_cars_n, q_cars_e, q_cars_s, q_cars_w = 9, 3, 11, 12
-w_n, w_e, w_s, w_w = 30, 0, 90, 60
+q_cars_n, q_cars_e, q_cars_s, q_cars_w = 10, 3, 17, 10
+w_n, w_e, w_s, w_w = 0, 60, 90, 120
 
-# Fuzzy membership function activation for the given values
+# Calculate the fuzzy memberships of queue and waiting time for each direction
 n_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_n)
 e_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_e)
 s_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_s)
 w_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_w)
-print(f"n_sum_queue = {n_sum_queue}\ne_sum_queue = {e_sum_queue}\ns_sum_queue = {s_sum_queue}\nw_sum_queue = {w_sum_queue}\n\n")
+print(f"\nDEBUG\nn_sum_queue = {n_sum_queue}\ne_sum_queue = {e_sum_queue}\n"
+      f"s_sum_queue = {s_sum_queue}\nw_sum_queue = {w_sum_queue}\n\n")
 n_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_n)
 e_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_e)
 s_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_s)
 w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
-print(f"n_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\ns_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
+print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
+      f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
 # FUZZY RULE SETS
 # Traffic urgency decision
