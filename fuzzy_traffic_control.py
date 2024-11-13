@@ -125,7 +125,7 @@ extension_time_mf = {
 }
 
 # Create plots for the membership functions
-fig, (ax0, ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=6, figsize=(10, 8))
+fig_m, (ax0, ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=6, figsize=(10, 8))
 
 # Colors for the membership functions
 colors = {
@@ -159,14 +159,15 @@ xticks = [[0, 1, 6, 12, 18, 20],
           [0, 1, 10, 20, 30, 40]]
 
 # Visualize the membership functions
-for mf, u_range, ax, title, xtick in zip(membership_functions, ranges, axes, titles, xticks):
+for mf, u_range, ax, title, xtick in zip(
+        membership_functions, ranges, axes,titles, xticks):
     for key, value in mf.items():
         ax.plot(u_range, value, colors[key], linewidth=2, label=f'{key}')
     ax.set_xticks(xtick)
     ax.set_title(title)
 
 # Place the legends to the right of the plots
-for ax in (ax0, ax1, ax2, ax3, ax4, ax5):
+for ax in axes:
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 plt.tight_layout()
@@ -189,7 +190,6 @@ w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
 print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
       f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
-# FUZZY RULE SETS
 # Traffic urgency decision
 north_urgency = urgency_rule_activation(n_sum_queue, n_wait_t, urgency_mf)
 east_urgency = urgency_rule_activation(e_sum_queue, e_wait_t, urgency_mf)
@@ -201,7 +201,7 @@ for key, value in north_urgency.items():
     print(f"{key} = {value}")
 
 urgency0 = np.zeros_like(urgency_range)
-fig, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
+f_u, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
 
 urgencies = [north_urgency, east_urgency, south_urgency, west_urgency]
 axes = [ax_n, ax_e, ax_s, ax_w]
@@ -215,9 +215,56 @@ for (urgency, ax, title) in zip(urgencies, axes, titles):
                         color=colors[key], alpha=0.7)
     # Draw the outlines of the membership functions
     for key, value in urgency_mf.items():    
-        ax.plot(urgency_range, value, linewidth=1.5, color=colors[key])
+        ax.plot(urgency_range, value, linewidth=1.5, color=colors[key],
+                label=f'{key}')
     ax.set_title(title)
+plt.tight_layout()
 
+# Place the legends to the right of the plots
+for ax in axes:
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+print("\nDEBUG\n")
+# Aggregate all four urgency output membership functions together
+aggregated_urgencies = {
+    'north': -1,
+    'east': -1,
+    'south': -1,
+    'west': -1,
+}
+defuzz_results, defuzz_plt = dict(aggregated_urgencies), dict(aggregated_urgencies)
+
+for urgency, key in zip(urgencies, aggregated_urgencies.keys()):
+    u_zero, u_low, u_medium, u_high = urgency.values()
+    # DEBUG
+    # for asd in [u_zero, u_low, u_medium, u_high]:
+    #     print(f"    urgency {asd}")
+    # print('\n')
+    aggregated_urgencies[key] = np.fmax(u_zero, np.fmax(
+        u_low, np.fmax(u_medium, u_high)))
+    
+print(f"\nDEBUG\n    agg: {aggregated_urgencies}\n    defuzz:{defuzz_results}")
+
+# Defuzzify aggregated outputs
+for key, value in aggregated_urgencies.items():
+    defuzz_results[key] = fuzz.defuzz(urgency_range, aggregated_urgencies[key], "centroid")
+    # This is only necessary for the plot
+    defuzz_plt[key] = fuzz.interp_membership(urgency_range, aggregated_urgencies[key], defuzz_results[key])
+print(f"\n\n{defuzz_results}\n\n")
+fig_d, (ax_n_d, ax_e_d, ax_s_d, ax_w_d) = plt.subplots(nrows=4, figsize=(10, 8))
+
+axes_d = [ax_n_d, ax_e_d, ax_s_d, ax_w_d]
+
+# Visualization of the defuzzified results
+for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(), urgencies, axes_d, titles):
+    ax.fill_between(urgency_range, urgency0, value,
+                    facecolor='orange', alpha=0.7)
+    ax.plot([defuzz_results[key], defuzz_results[key]], [0, defuzz_plt[key]], 'k', linewidth=1.5, alpha=0.9)
+    # Draw the outlines of the membership functions
+    for key, value in urgency_mf.items():    
+        ax.plot(urgency_range, value, linewidth=1.5, color=colors[key],
+                label=f'{key}')
+    ax.set_title(title)
 plt.tight_layout()
 
 plt.show()
