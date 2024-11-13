@@ -166,8 +166,8 @@ for ax in (ax0, ax1, ax2, ax3, ax4, ax5):
 plt.tight_layout()
 
 # TEST VARS
-q_cars_n, q_cars_e, q_cars_s, q_cars_w = 10, 3, 17, 10
-w_n, w_e, w_s, w_w = 0, 60, 90, 120
+q_cars_n, q_cars_e, q_cars_s, q_cars_w = 7, 19, 5, 11
+w_n, w_e, w_s, w_w = 60, 0, 120, 30
 
 # Calculate the fuzzy memberships of queue and waiting time for each direction
 n_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_n)
@@ -185,18 +185,39 @@ print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
 
 # FUZZY RULE SETS
 # Traffic urgency decision
-north_urgency = urgency_rule_activation(w_sum_queue, w_wait_t, urgency_mf)
+north_urgency = urgency_rule_activation(n_sum_queue, n_wait_t, urgency_mf)
+east_urgency = urgency_rule_activation(e_sum_queue, e_wait_t, urgency_mf)
+south_urgency = urgency_rule_activation(s_sum_queue, s_wait_t, urgency_mf)
+west_urgency = urgency_rule_activation(w_sum_queue, w_wait_t, urgency_mf)
 
+print("\nDEBUG\n")
 for key, value in north_urgency.items():
     print(f"{key} = {value}")
 
 urgency0 = np.zeros_like(urgency_range)
-fig, ax0 = plt.subplots()
+fig, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
+
+colors = {
+    'zero': 'c',
+    'low': 'g',
+    'medium': 'orange',
+    'high': 'r',
+}
+urgencies = [north_urgency, east_urgency, south_urgency, west_urgency]
+axes = [ax_n, ax_e, ax_s, ax_w]
+titles = ["Észak - sürgősség", "Kelet - sürgősség", "Dél - sürgősség",
+          "Nyugat - sürgősség"]
+
 # Visualization before aggregation
-for value_urgency in north_urgency.values():
-    for key, value in urgency_mf.items():
-        ax0.fill_between(urgency_range, urgency0, value_urgency, alpha=0.7)
-        ax0.plot(urgency_range, value, linewidth=0.5, linestyle='--', )
-ax0.set_title('Output membership activity')
+for (urgency, ax, title) in zip(urgencies, axes, titles):
+    for key, value_urgency in urgency.items():
+        ax.fill_between(urgency_range, urgency0, value_urgency,
+                        color=colors[key], alpha=0.7)
+    # Draw the outlines of the membership functions
+    for key, value in urgency_mf.items():    
+        ax.plot(urgency_range, value, linewidth=1.5, color=colors[key])
+    ax.set_title(title)
+
+plt.tight_layout()
 
 plt.show()
