@@ -126,38 +126,44 @@ extension_time_mf = {
 
 # Create plots for the membership functions
 fig, (ax0, ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows=6, figsize=(10, 8))
-# Orders of the colors for the membership functions
-colors = ('c', 'g', 'orange', 'r')
 
-ax0.set_xticks([0, 1, 6, 12, 18, 20])
-for (key, value), color in zip(sum_queue_mf.items(), colors):
-    ax0.plot(sum_queue_range, value, color, linewidth=2, label=f'{key}')
-ax0.set_title('INPUT: Várakozó autók összmennyiség')
+# Colors for the membership functions
+colors = {
+    'zero': 'c',
+    'negligible': 'c',
+    'few': 'g',
+    'short': 'g',
+    'low': 'g',
+    'medium': 'orange',
+    'many': 'r',
+    'long': 'r',
+    'high': 'r',
+}
+axes = [ax0, ax1, ax2, ax3, ax4, ax5]
+ranges = [sum_queue_range, waiting_time_range, urgency_range, lane_queue_range,
+          lane_queue_range, extension_time_range]
+membership_functions = [sum_queue_mf, waiting_time_mf, urgency_mf,
+                        inner_lane_queue_mf, outer_lane_queue_mf,
+                        extension_time_mf]
+titles = ['INPUT: Várakozó autók összmennyiség',
+          'INPUT: Várakozási idő',
+          'OUTPUT: Várakozási időből adódó prioritásszint',
+          'INPUT: Várakozó autók száma a belső sávban',
+          'INPUT: Várakozó autók száma a külső sávban',
+          'OUTPUT: Zöld lámpa idejéhez adott idő']
+xticks = [[0, 1, 6, 12, 18, 20],
+          np.arange(0, 151, 30),
+          np.arange(0, 11, 2),
+          np.arange(0, 11, 2),
+          np.arange(0, 11, 2),
+          [0, 1, 10, 20, 30, 40]]
 
-ax1.set_xticks(np.arange(0, 151, 30))
-for (key, value), color in zip(waiting_time_mf.items(), colors):
-    ax1.plot(waiting_time_range, value, color, linewidth=2, label=f'{key}')
-ax1.set_title('INPUT: Várakozási idő')
-
-ax2.set_xticks(np.arange(0, 11, 2))
-for (key, value), color in zip(urgency_mf.items(), colors):
-    ax2.plot(urgency_range, value, color, linewidth=2, label=f'{key}')
-ax2.set_title('OUTPUT: Várakozási időből adódó prioritásszint')
-
-ax3.set_xticks(np.arange(0, 11, 2))
-for (key, value), color in zip(inner_lane_queue_mf.items(), colors):
-    ax3.plot(lane_queue_range, value, color, linewidth=2, label=f'{key}')
-ax3.set_title('INPUT: Várakozó autók száma a belső sávban')
-
-ax4.set_xticks(np.arange(0, 11, 2))                                             
-for (key, value), color in zip(outer_lane_queue_mf.items(), colors):            
-    ax4.plot(lane_queue_range, value, color, linewidth=2, label=f'{key}')       
-ax4.set_title('INPUT: Várakozó autók száma a külső sávban') 
-
-ax5.set_xticks([0, 1, 10, 20, 30, 40])
-for (key, value), color in zip(extension_time_mf.items(), colors):            
-    ax5.plot(extension_time_range, value, color, linewidth=2, label=f'{key}')       
-ax5.set_title('OUTPUT: Zöld lámpa idejéhez adott idő')
+# Visualize the membership functions
+for mf, u_range, ax, title, xtick in zip(membership_functions, ranges, axes, titles, xticks):
+    for key, value in mf.items():
+        ax.plot(u_range, value, colors[key], linewidth=2, label=f'{key}')
+    ax.set_xticks(xtick)
+    ax.set_title(title)
 
 # Place the legends to the right of the plots
 for ax in (ax0, ax1, ax2, ax3, ax4, ax5):
@@ -197,12 +203,6 @@ for key, value in north_urgency.items():
 urgency0 = np.zeros_like(urgency_range)
 fig, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
 
-colors = {
-    'zero': 'c',
-    'low': 'g',
-    'medium': 'orange',
-    'high': 'r',
-}
 urgencies = [north_urgency, east_urgency, south_urgency, west_urgency]
 axes = [ax_n, ax_e, ax_s, ax_w]
 titles = ["Észak - sürgősség", "Kelet - sürgősség", "Dél - sürgősség",
