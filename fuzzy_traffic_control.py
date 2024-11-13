@@ -67,18 +67,18 @@ def urgency_rule_activation(first_antec, second_antec, conseq_mf):
 
 # Generate ranges for the membership functions
 # Sum of cars waiting in a given direction 
-sum_queue_range = np.arange(0, 21, 1)
+sum_queue_range = np.arange(0, 20, 0.01)
 # Time elapsed since the last green phase in a given direction
-waiting_time_range = np.arange(0, 151, 1)
+waiting_time_range = np.arange(0, 150, 0.01)
 # Output for the inputs (sum_queue, waiting_time): the more cars wait in one
 # direction, the more urgent they become.
-urgency_range = np.arange(0, 11, 1)
+urgency_range = np.arange(0, 10, 0.01)
 # Number of cars waiting in the inner lane (the lane that turns left) in a
 # given direction OR in the outer lane (the lane that goes straight or turns
 # right) in the same given direction
-lane_queue_range = np.arange(0, 11, 1)
+lane_queue_range = np.arange(0, 10, 0.01)
 # Output for the inputs (inner_lane_queue, outer_lane_queue): 
-extension_time_range = np.arange(0, 41, 1)
+extension_time_range = np.arange(0, 40, 0.01)
 
 # Generate fuzzy membership functions
 sum_queue_mf = {
