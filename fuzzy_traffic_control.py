@@ -14,7 +14,7 @@ def interpret_memberships(universe, dict_mf, fuzzy_element):
         )
     return calc_m 
 
-def urgency_rule_activation(first_antec, second_antec, conseq_mf):
+def rule_activation(first_antec, second_antec, conseq_mf, case):
     """
     Assembles the rule base and calculates the fuzzy membership values of the 
     antecedents for each urgency fuzzy set
@@ -22,48 +22,101 @@ def urgency_rule_activation(first_antec, second_antec, conseq_mf):
     active_conseq = {}
     rules = [-1]*17
 
-    # First variable of the antecedents (sum of waiting cars)
-    first_antec_values = ['zero', 'zero', 'zero', 'zero', 
-                          'few', 'few', 'few', 'few', 
-                          'medium', 'medium', 'medium', 'medium', 
-                          'many', 'many', 'many', 'many']
-    # Second variable of the antecedents (waiting time since the last green 
-    # phase)
-    second_antec_values = ['negligible', 'short', 'medium', 'long', 
-                           'negligible', 'short', 'medium', 'long', 
-                           'negligible', 'short', 'medium', 'long', 
-                           'negligible', 'short', 'medium', 'long']
-    # Variable for the consequents
-    conseq_mf_values = ['zero', 'low', 'medium', 'high', 
-                        'zero', 'low', 'medium', 'high', 
-                        'low', 'medium', 'medium', 'high', 
-                        'medium', 'high', 'high', 'high']
-    # e.g.:
-    # antecedent = (IF sum_of_waiting_cars = zero AND waiting_time = negligible)
-    # consequent = (THEN urgency = zero)
+    if case == 'urgency':
+        # First variable of the antecedents (sum of waiting cars)
+        first_antec_values = ['zero', 'zero', 'zero', 'zero', 
+                            'few', 'few', 'few', 'few', 
+                            'medium', 'medium', 'medium', 'medium', 
+                            'many', 'many', 'many', 'many']
+        # Second variable of the antecedents (waiting time since the last green 
+        # phase)
+        second_antec_values = ['negligible', 'short', 'medium', 'long', 
+                            'negligible', 'short', 'medium', 'long', 
+                            'negligible', 'short', 'medium', 'long', 
+                            'negligible', 'short', 'medium', 'long']
+        # Variable for the consequents
+        conseq_mf_values = ['zero', 'low', 'medium', 'high', 
+                            'zero', 'low', 'medium', 'high', 
+                            'low', 'medium', 'medium', 'high', 
+                            'medium', 'high', 'high', 'high']
+        # e.g.:
+        # antecedent := (IF sum_of_waiting_cars = zero AND waiting_time = 
+        # negligible)
+        # consequent := (THEN urgency = zero)
 
-    # Assembling the fuzzy rule base and calculating the fuzzy membership values 
-    # for the given rules
-    print("\nDEBUG\n")
-    for i, (value1, value2, value3) in enumerate(
-            zip(first_antec_values, second_antec_values, conseq_mf_values),
-            start=1):
-        rules[i] = np.fmin(np.fmin(
-            first_antec[value1], second_antec[value2]), conseq_mf[value3])
-        print(f"    {rules[i]}")
+        # Assembling the fuzzy rule base and calculating the fuzzy membership 
+        # values for the given rules
+        print("\nDEBUG\n")
+        for i, (value1, value2, value3) in enumerate(
+                zip(first_antec_values, second_antec_values, conseq_mf_values),
+                start=1):
+            rules[i] = np.fmin(np.fmin(
+                first_antec[value1], second_antec[value2]), conseq_mf[value3])
+            print(f"    {rules[i]}")
 
-    # Calculating the fuzzy membership values for the output urgency fuzzy sets 
-    # (the level of urgency)
-    # The urgency is 'zero' if rule 1 OR rule 5 is activated
-    active_conseq['zero'] = np.fmax(rules[1], rules[5])
-    # The urgency is 'low' if rule 2 OR rule 6 OR rule 9 is activated, etc...
-    active_conseq['low'] = np.fmax(np.fmax(rules[2], rules[6]), rules[9])
-    active_conseq['medium'] = np.fmax(np.fmax(np.fmax(np.fmax(
-        rules[3],rules[7]), rules[10]), rules[11]), rules[13])
-    active_conseq['high'] = np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(
-        rules[4], rules[8]), rules[12]), rules[14]), rules[15]), rules[16])
+        # Calculating the fuzzy membership values for the output urgency fuzzy 
+        # sets (the level of urgency)
+        # The urgency is 'zero' if rule 1 OR rule 5 is activated
+        active_conseq['zero'] = np.fmax(rules[1], rules[5])
+        # The urgency is 'low' if rule 2 OR rule 6 OR rule 9 is activated, etc.
+        active_conseq['low'] = np.fmax(np.fmax(rules[2], rules[6]), rules[9])
+        active_conseq['medium'] = np.fmax(np.fmax(np.fmax(np.fmax(
+            rules[3],rules[7]), rules[10]), rules[11]), rules[13])
+        active_conseq['high'] = np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(
+            rules[4], rules[8]), rules[12]), rules[14]), rules[15]), rules[16])
+    
+    elif case == 'extension':
+        # First variable of the antecedents (sum of waiting cars)
+        first_antec_values = ['negligible', 'negligible', 'negligible', 
+                              'negligible', 'few', 'few', 'few', 'few', 
+                            'medium', 'medium', 'medium', 'medium', 
+                            'many', 'many', 'many', 'many']
+        # Second variable of the antecedents (waiting time since the last green 
+        # phase)
+        second_antec_values = ['negligible', 'few', 'medium', 'many', 
+                            'negligible', 'few', 'medium', 'many', 
+                            'negligible', 'few', 'medium', 'many', 
+                            'negligible', 'few', 'medium', 'many']
+        # Variable for the consequents
+        conseq_mf_values = ['zero', 'short', 'medium', 'long', 
+                            'short', 'short', 'medium', 'long', 
+                            'medium', 'medium', 'medium', 'long', 
+                            'long', 'long', 'long', 'long']
+
+        # e.g.:
+        # antecedent = (IF sum_of_waiting_cars = zero AND 
+        # waiting_time = negligible) consequent = (THEN urgency = zero)
+
+        # Assembling the fuzzy rule base and calculating the fuzzy membership 
+        # values for the given rules
+        print("\nDEBUG\n")
+        for i, (value1, value2, value3) in enumerate(
+                zip(first_antec_values, second_antec_values, conseq_mf_values),
+                start=1):
+            rules[i] = np.fmin(np.fmin(
+                first_antec[value1], second_antec[value2]), conseq_mf[value3])
+            print(f"    {rules[i]}")
+
+        # Calculating the fuzzy membership values for the output extension time 
+        # fuzzy sets (the length of green phase extension)
+        # The extension is 'zero' if rule 1 is activated
+        active_conseq['zero'] = rules[1]
+        # The urgency is 'short' if rule 2 OR rule 5 OR rule 6 is activated, etc
+        active_conseq['short'] = np.fmax(np.fmax(rules[2], rules[5]), rules[6])
+        active_conseq['medium'] = np.fmax(np.fmax(np.fmax(np.fmax(
+            rules[3],rules[7]), rules[9]), rules[10]), rules[11])
+        active_conseq['long'] = np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(np.fmax(
+            rules[4], rules[8]), rules[12]), rules[13]), rules[14]), rules[15]),
+            rules[16])
+
+    else:
+        print(f"ERROR: BAD CASE GIVEN!")
+        exit(1)
     
     return active_conseq
+
+def extension_rule_activation(inner_queue, outer_queue, extension_time_mf):
+    pass
 
 # Generate ranges for the membership functions
 # Sum of cars waiting in a given direction 
@@ -176,37 +229,61 @@ plt.tight_layout()
 
 # TEST VARS
 # Waiting cars in specficic lanes in each directions
-q_outer_n, q_outer_e, q_outer_s, q_outer_w = 5, 10, 0, 2
-q_inner_n, q_inner_e, q_inner_s, q_inner_w = 2, 8, 5, 9
+n_lane_queues = {
+    'inner': 2,
+    'outer': 5,
+}
+e_lane_queues = {
+    'inner': 8,
+    'outer': 10,
+}
+s_lane_queues = {
+    'inner': 5,
+    'outer': 0,
+}
+w_lane_queues = {
+    'inner': 9,
+    'outer': 2,
+}
+# q_outer_n, q_outer_e, q_outer_s, q_outer_w = 5, 10, 0, 2
+# q_inner_n, q_inner_e, q_inner_s, q_inner_w = 2, 8, 5, 9
+lane_queues = {
+    'north': n_lane_queues,
+    'east': e_lane_queues,
+    'south': s_lane_queues,
+    'west': w_lane_queues,
+}
+
 # Sum of waiting cars and their waiting time in each direction
-q_cars_n = q_outer_n + q_inner_n
-q_cars_e = q_outer_e + q_inner_e
-q_cars_s = q_outer_s + q_inner_s
-q_cars_w = q_outer_w + q_inner_w
+q_cars_n = sum(n_lane_queues.values())
+q_cars_e = sum(e_lane_queues.values())
+q_cars_s = sum(s_lane_queues.values())
+q_cars_w = sum(w_lane_queues.values())
 w_n, w_e, w_s, w_w = 60, 0, 120, 30
 
+# THIS PART IS FOR TESTS ONLY
 # Calculate fuzzy memberships of a queue for each lane in a given direction
-n_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
-                                      q_outer_n)
-e_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
-                                      q_outer_e)
-s_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
-                                      q_outer_s)
-w_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
-                                      q_outer_w)
-print(f"\nLANE DEBUG\n")
-print(f"n_outer_queue = {n_outer_queue}\ne_outer_queue = {e_outer_queue}\n"
-      f"s_outer_queue = {s_outer_queue}\nw_outer_queue = {w_outer_queue}\n")
-n_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
-                                      q_inner_n)
-e_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
-                                      q_inner_e)
-s_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
-                                      q_inner_s)
-w_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
-                                      q_inner_w)
-print(f"n_inner_queue = {n_inner_queue}\ne_inner_queue = {e_inner_queue}\n"
-      f"s_inner_queue = {s_inner_queue}\nw_inner_queue = {w_inner_queue}\n")
+# n_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+#                                       q_outer_n)
+# e_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+#                                       q_outer_e)
+# s_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+#                                       q_outer_s)
+# w_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+#                                       q_outer_w)
+# print(f"\nLANE DEBUG\n")
+# print(f"n_outer_queue = {n_outer_queue}\ne_outer_queue = {e_outer_queue}\n"
+#       f"s_outer_queue = {s_outer_queue}\nw_outer_queue = {w_outer_queue}\n")
+# n_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+#                                       q_inner_n)
+# e_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+#                                       q_inner_e)
+# s_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+#                                       q_inner_s)
+# w_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+#                                       q_inner_w)
+# print(f"n_inner_queue = {n_inner_queue}\ne_inner_queue = {e_inner_queue}\n"
+#       f"s_inner_queue = {s_inner_queue}\nw_inner_queue = {w_inner_queue}\n")
 
 # Calculate the fuzzy memberships of queue and waiting time for each direction
 n_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_n)
@@ -223,10 +300,10 @@ w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
 #       f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
 # Traffic urgency fuzzy membership values
-north_urgency = urgency_rule_activation(n_sum_queue, n_wait_t, urgency_mf)
-east_urgency = urgency_rule_activation(e_sum_queue, e_wait_t, urgency_mf)
-south_urgency = urgency_rule_activation(s_sum_queue, s_wait_t, urgency_mf)
-west_urgency = urgency_rule_activation(w_sum_queue, w_wait_t, urgency_mf)
+north_urgency = rule_activation(n_sum_queue, n_wait_t, urgency_mf, 'urgency')
+east_urgency = rule_activation(e_sum_queue, e_wait_t, urgency_mf, 'urgency')
+south_urgency = rule_activation(s_sum_queue, s_wait_t, urgency_mf, 'urgency')
+west_urgency = rule_activation(w_sum_queue, w_wait_t, urgency_mf, 'urgency')
 
 # print("\nDEBUG\n")
 # for key, value in north_urgency.items():
@@ -269,8 +346,6 @@ for urgency, key in zip(urgencies, directions):
     # union = max
     aggregated_urgencies[key] = np.fmax(u_zero, np.fmax(
         u_low, np.fmax(u_medium, u_high)))
-    
-# print(f"\nDEBUG\n    agg: {aggregated_urgencies}\n    defuzz:{defuzz_results}")
 
 # Defuzzify aggregated outputs
 for key, value in aggregated_urgencies.items():
@@ -283,6 +358,10 @@ for key, value in aggregated_urgencies.items():
 fig_d, (ax_n_d, ax_e_d, ax_s_d, ax_w_d) = plt.subplots(nrows=4, figsize=(10, 8))
 
 axes_d = [ax_n_d, ax_e_d, ax_s_d, ax_w_d]
+titles = ["Észak - sürgősség (defuzzfikált)",
+          "Kelet - sürgősség (defuzzfikált)",
+          "Dél - sürgősség (defuzzfikált)",
+          "Nyugat - sürgősség (defuzzfikált)"]
 
 # Visualization of the defuzzified results
 for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(), 
@@ -306,6 +385,90 @@ for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(),
 # Place the legends to the right of the plots
 for ax in axes:
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.tight_layout()
+
+
+max_key = max(defuzz_results, key=defuzz_results.get)
+print(f"\nDEBUG\nThe most urgent lane is {max_key} with a value of "
+      f"{defuzz_results[max_key]}")
+
+# Calculate fuzzy memberships of lane queues for the most urgent direction
+inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                    lane_queues[max_key]['inner'])
+outer_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                    lane_queues[max_key]['outer'])
+print("\nDEBUG\n")
+print(f"    inner_queue = {inner_queue}")
+print(f"    outer_queue = {outer_queue}")
+
+# Green phase extension fuzzy membership values
+extension = rule_activation(inner_queue, outer_queue, extension_time_mf,
+                            'extension')
+
+# Lower boundary
+extension0 = np.zeros_like(extension_time_range)
+f_ext, ax_ext = plt.subplots(figsize=(8, 4))
+title = 'Zöld lámpa fázis meghosszabbításának ideje'
+
+# Visualization before aggregation
+for key, value in extension.items():
+    ax_ext.fill_between(extension_time_range, extension0, value,
+                    color=colors[key], alpha=0.7)
+# Draw the outlines of the membership functions
+for key, value in extension_time_mf.items():    
+    ax_ext.plot(extension_time_range, value, linewidth=1.5, color=colors[key],
+            label=f'{key}')
+    # Cut off the redundant end of the plot
+    ax_ext.set_xlim([0, extension_time_range[-1]-0.99])
+ax_ext.set_title(title)
+# Place the legends to the right of the plots
+ax_ext.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.tight_layout()
+
+# Aggregate all four extension time output membership functions together
+aggregated_extensions, defuzz_ext_results, defuzz_ext_plt = {}, {}, {}
+
+ext_zero, ext_short, ext_medium, ext_long = extension.values()
+# The aggregated result will be the union of all output membership functions
+# union = max
+aggregated_extensions[key] = np.fmax(ext_zero, np.fmax(
+    ext_short, np.fmax(ext_medium, ext_long)))
+    
+
+# Defuzzify aggregated outputs
+for key, value in aggregated_extensions.items():
+    defuzz_ext_results[key] = fuzz.defuzz(
+        extension_time_range, aggregated_extensions[key], "centroid")
+
+    # This is only necessary for the plot
+    defuzz_ext_plt[key] = fuzz.interp_membership(
+        extension_time_range, aggregated_extensions[key],
+        defuzz_ext_results[key])
+
+fig_d, ax_ext_def = plt.subplots(figsize=(8, 4))
+title = 'Zöld lámpa fázis meghosszabbításának ideje (defuzzifikált)'
+
+# Visualization of the defuzzified result
+for key, value in aggregated_extensions.items():
+    # Draw the filled aggregated output
+    ax_ext_def.fill_between(extension_time_range, extension0, value,
+                    facecolor='peachpuff', alpha=0.7)
+    ax_ext_def.plot(extension_time_range, value, linewidth=1.5, color='k')
+    # Draw a vertical line to mark the crisp output
+    ax_ext_def.plot([defuzz_ext_results[key], defuzz_ext_results[key]], 
+                    [0, defuzz_ext_plt[key]], 'k', linewidth=1.5, alpha=0.9)
+            
+    # Draw the outlines of the membership functions
+    for key, value in extension_time_mf.items():    
+        ax_ext_def.plot(extension_time_range, value, linewidth=1.5,
+                        color=colors[key], label=f'{key}', linestyle='dashed',
+                        alpha=0.5)
+        # Cut off the redundant end of the plot
+        ax_ext_def.set_xlim([0, extension_time_range[-1]-0.99])
+    ax_ext_def.set_title(title)
+    
+# Place the legends to the right of the plots
+ax_ext_def.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.tight_layout()
 
 plt.show()
