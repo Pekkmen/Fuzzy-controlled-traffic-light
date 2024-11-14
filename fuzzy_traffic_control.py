@@ -190,7 +190,7 @@ w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
 print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
       f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
-# Traffic urgency decision
+# Traffic urgency fuzzy membership values
 north_urgency = urgency_rule_activation(n_sum_queue, n_wait_t, urgency_mf)
 east_urgency = urgency_rule_activation(e_sum_queue, e_wait_t, urgency_mf)
 south_urgency = urgency_rule_activation(s_sum_queue, s_wait_t, urgency_mf)
@@ -200,6 +200,7 @@ print("\nDEBUG\n")
 for key, value in north_urgency.items():
     print(f"{key} = {value}")
 
+# Lower boundary 
 urgency0 = np.zeros_like(urgency_range)
 f_u, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
 
@@ -226,20 +227,13 @@ for ax in axes:
 
 print("\nDEBUG\n")
 # Aggregate all four urgency output membership functions together
-aggregated_urgencies = {
-    'north': -1,
-    'east': -1,
-    'south': -1,
-    'west': -1,
-}
-defuzz_results, defuzz_plt = dict(aggregated_urgencies), dict(aggregated_urgencies)
+directions = ['north', 'east', 'south', 'west']
+aggregated_urgencies, defuzz_results, defuzz_plt = {}, {}, {}
 
-for urgency, key in zip(urgencies, aggregated_urgencies.keys()):
+for urgency, key in zip(urgencies, directions):
     u_zero, u_low, u_medium, u_high = urgency.values()
-    # DEBUG
-    # for asd in [u_zero, u_low, u_medium, u_high]:
-    #     print(f"    urgency {asd}")
-    # print('\n')
+    # The aggregated result will be the union of all output membership functions
+    # union = max
     aggregated_urgencies[key] = np.fmax(u_zero, np.fmax(
         u_low, np.fmax(u_medium, u_high)))
     
@@ -247,19 +241,25 @@ print(f"\nDEBUG\n    agg: {aggregated_urgencies}\n    defuzz:{defuzz_results}")
 
 # Defuzzify aggregated outputs
 for key, value in aggregated_urgencies.items():
-    defuzz_results[key] = fuzz.defuzz(urgency_range, aggregated_urgencies[key], "centroid")
+    defuzz_results[key] = fuzz.defuzz(urgency_range, aggregated_urgencies[key],
+                                      "centroid")
     # This is only necessary for the plot
-    defuzz_plt[key] = fuzz.interp_membership(urgency_range, aggregated_urgencies[key], defuzz_results[key])
-print(f"\n\n{defuzz_results}\n\n")
+    defuzz_plt[key] = fuzz.interp_membership(
+        urgency_range,aggregated_urgencies[key], defuzz_results[key])
+print(f"\n\n    defuzz: {defuzz_results}\n\n")
 fig_d, (ax_n_d, ax_e_d, ax_s_d, ax_w_d) = plt.subplots(nrows=4, figsize=(10, 8))
 
 axes_d = [ax_n_d, ax_e_d, ax_s_d, ax_w_d]
 
 # Visualization of the defuzzified results
-for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(), urgencies, axes_d, titles):
+for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(), 
+                                            urgencies, axes_d, titles):
+    # Draw the filled aggregated output
     ax.fill_between(urgency_range, urgency0, value,
                     facecolor='orange', alpha=0.7)
-    ax.plot([defuzz_results[key], defuzz_results[key]], [0, defuzz_plt[key]], 'k', linewidth=1.5, alpha=0.9)
+    # Draw a vertical line to mark the crisp output
+    ax.plot([defuzz_results[key], defuzz_results[key]], [0, defuzz_plt[key]],
+            'k', linewidth=1.5, alpha=0.9)
     # Draw the outlines of the membership functions
     for key, value in urgency_mf.items():    
         ax.plot(urgency_range, value, linewidth=1.5, color=colors[key],
