@@ -67,46 +67,46 @@ def urgency_rule_activation(first_antec, second_antec, conseq_mf):
 
 # Generate ranges for the membership functions
 # Sum of cars waiting in a given direction 
-sum_queue_range = np.arange(0, 20, 0.01)
+sum_queue_range = np.arange(0, 21, 0.01)
 # Time elapsed since the last green phase in a given direction
-waiting_time_range = np.arange(0, 150, 0.01)
+waiting_time_range = np.arange(0, 151, 0.01)
 # Output for the inputs (sum_queue, waiting_time): the more cars wait in one
 # direction, the more urgent they become.
-urgency_range = np.arange(0, 10, 0.01)
+urgency_range = np.arange(0, 11, 0.01)
 # Number of cars waiting in the inner lane (the lane that turns left) in a
 # given direction OR in the outer lane (the lane that goes straight or turns
 # right) in the same given direction
-lane_queue_range = np.arange(0, 10, 0.01)
+lane_queue_range = np.arange(0, 11, 0.01)
 # Output for the inputs (inner_lane_queue, outer_lane_queue): 
-extension_time_range = np.arange(0, 40, 0.01)
+extension_time_range = np.arange(0, 41, 0.01)
 
 # Generate fuzzy membership functions
 sum_queue_mf = {
     "zero": fuzz.trapmf(sum_queue_range, [0, 0, 0, 1]),
     "few": fuzz.trimf(sum_queue_range, [0, 6, 12]),
     "medium": fuzz.trimf(sum_queue_range, [6, 12, 18]),
-    "many": fuzz.trapmf(sum_queue_range, [12, 18, 20, 20]),
+    "many": fuzz.trapmf(sum_queue_range, [12, 18, 20, 21]),
 }
 
 waiting_time_mf = {
     "negligible": fuzz.trapmf(waiting_time_range, [0, 0, 30, 60]),
     "short": fuzz.trimf(waiting_time_range, [30, 60, 90]),
     "medium": fuzz.trimf(waiting_time_range, [60, 90, 120]),
-    "long": fuzz.trapmf(waiting_time_range, [90, 120, 150, 150]),
+    "long": fuzz.trapmf(waiting_time_range, [90, 120, 150, 151]),
 }
 
 urgency_mf = {
     "zero": fuzz.trapmf(urgency_range, [0, 0, 2, 4]),
     "low": fuzz.trimf(urgency_range, [2, 4, 6]),
     "medium": fuzz.trimf(urgency_range, [4, 6, 8]),
-    "high": fuzz.trapmf(urgency_range, [6, 8, 10, 10]),
+    "high": fuzz.trapmf(urgency_range, [6, 8, 10, 11]),
 }
 
 inner_lane_queue_mf = {
     "negligible": fuzz.trapmf(lane_queue_range, [0, 0, 2, 4]),
     "few": fuzz.trimf(lane_queue_range, [2, 4, 6]),
     "medium": fuzz.trimf(lane_queue_range, [4, 6, 8]),
-    "many": fuzz.trapmf(lane_queue_range, [6, 8, 10, 10]),
+    "many": fuzz.trapmf(lane_queue_range, [6, 8, 10, 11]),
 }
 
 # Might need to modify one single lane later, so keep the boilerplate code
@@ -114,14 +114,14 @@ outer_lane_queue_mf = {
     "negligible": fuzz.trapmf(lane_queue_range, [0, 0, 2, 4]),
     "few": fuzz.trimf(lane_queue_range, [2, 4, 6]),
     "medium": fuzz.trimf(lane_queue_range, [4, 6, 8]),
-    "many": fuzz.trapmf(lane_queue_range, [6, 8, 10, 10]),
+    "many": fuzz.trapmf(lane_queue_range, [6, 8, 10, 11]),
 }
 
 extension_time_mf = {
     "zero": fuzz.trapmf(extension_time_range, [0, 0, 0, 1]),
     "short": fuzz.trimf(extension_time_range, [0, 10, 20]),
     "medium": fuzz.trimf(extension_time_range, [10, 20, 30]),
-    "long": fuzz.trapmf(extension_time_range, [20, 30, 40, 40]),
+    "long": fuzz.trapmf(extension_time_range, [20, 30, 40, 41]),
 }
 
 # Create plots for the membership functions
@@ -165,6 +165,8 @@ for mf, u_range, ax, title, xtick in zip(
         ax.plot(u_range, value, colors[key], linewidth=2, label=f'{key}')
     ax.set_xticks(xtick)
     ax.set_title(title)
+    # Cut off the redundant end of the plot
+    ax.set_xlim([0, u_range[-1]-0.99])
 
 # Place the legends to the right of the plots
 for ax in axes:
@@ -173,22 +175,52 @@ for ax in axes:
 plt.tight_layout()
 
 # TEST VARS
-q_cars_n, q_cars_e, q_cars_s, q_cars_w = 7, 19, 5, 11
+# Waiting cars in specficic lanes in each directions
+q_outer_n, q_outer_e, q_outer_s, q_outer_w = 5, 10, 0, 2
+q_inner_n, q_inner_e, q_inner_s, q_inner_w = 2, 8, 5, 9
+# Sum of waiting cars and their waiting time in each direction
+q_cars_n = q_outer_n + q_inner_n
+q_cars_e = q_outer_e + q_inner_e
+q_cars_s = q_outer_s + q_inner_s
+q_cars_w = q_outer_w + q_inner_w
 w_n, w_e, w_s, w_w = 60, 0, 120, 30
+
+# Calculate fuzzy memberships of a queue for each lane in a given direction
+n_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+                                      q_outer_n)
+e_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+                                      q_outer_e)
+s_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+                                      q_outer_s)
+w_outer_queue = interpret_memberships(lane_queue_range, outer_lane_queue_mf,
+                                      q_outer_w)
+print(f"\nLANE DEBUG\n")
+print(f"n_outer_queue = {n_outer_queue}\ne_outer_queue = {e_outer_queue}\n"
+      f"s_outer_queue = {s_outer_queue}\nw_outer_queue = {w_outer_queue}\n")
+n_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                      q_inner_n)
+e_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                      q_inner_e)
+s_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                      q_inner_s)
+w_inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
+                                      q_inner_w)
+print(f"n_inner_queue = {n_inner_queue}\ne_inner_queue = {e_inner_queue}\n"
+      f"s_inner_queue = {s_inner_queue}\nw_inner_queue = {w_inner_queue}\n")
 
 # Calculate the fuzzy memberships of queue and waiting time for each direction
 n_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_n)
 e_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_e)
 s_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_s)
 w_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_w)
-print(f"\nDEBUG\nn_sum_queue = {n_sum_queue}\ne_sum_queue = {e_sum_queue}\n"
-      f"s_sum_queue = {s_sum_queue}\nw_sum_queue = {w_sum_queue}\n\n")
+# print(f"\nDEBUG\nn_sum_queue = {n_sum_queue}\ne_sum_queue = {e_sum_queue}\n"
+#       f"s_sum_queue = {s_sum_queue}\nw_sum_queue = {w_sum_queue}\n\n")
 n_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_n)
 e_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_e)
 s_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_s)
 w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
-print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
-      f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
+# print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
+#       f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
 # Traffic urgency fuzzy membership values
 north_urgency = urgency_rule_activation(n_sum_queue, n_wait_t, urgency_mf)
@@ -196,11 +228,11 @@ east_urgency = urgency_rule_activation(e_sum_queue, e_wait_t, urgency_mf)
 south_urgency = urgency_rule_activation(s_sum_queue, s_wait_t, urgency_mf)
 west_urgency = urgency_rule_activation(w_sum_queue, w_wait_t, urgency_mf)
 
-print("\nDEBUG\n")
-for key, value in north_urgency.items():
-    print(f"{key} = {value}")
+# print("\nDEBUG\n")
+# for key, value in north_urgency.items():
+#     print(f"{key} = {value}")
 
-# Lower boundary 
+# Lower boundary
 urgency0 = np.zeros_like(urgency_range)
 f_u, (ax_n, ax_e, ax_s, ax_w) = plt.subplots(nrows=4, figsize=(10, 8))
 
@@ -218,14 +250,15 @@ for (urgency, ax, title) in zip(urgencies, axes, titles):
     for key, value in urgency_mf.items():    
         ax.plot(urgency_range, value, linewidth=1.5, color=colors[key],
                 label=f'{key}')
+        # Cut off the redundant end of the plot
+        ax.set_xlim([0, urgency_range[-1]-0.99])
     ax.set_title(title)
-plt.tight_layout()
 
 # Place the legends to the right of the plots
 for ax in axes:
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.tight_layout()
 
-print("\nDEBUG\n")
 # Aggregate all four urgency output membership functions together
 directions = ['north', 'east', 'south', 'west']
 aggregated_urgencies, defuzz_results, defuzz_plt = {}, {}, {}
@@ -237,7 +270,7 @@ for urgency, key in zip(urgencies, directions):
     aggregated_urgencies[key] = np.fmax(u_zero, np.fmax(
         u_low, np.fmax(u_medium, u_high)))
     
-print(f"\nDEBUG\n    agg: {aggregated_urgencies}\n    defuzz:{defuzz_results}")
+# print(f"\nDEBUG\n    agg: {aggregated_urgencies}\n    defuzz:{defuzz_results}")
 
 # Defuzzify aggregated outputs
 for key, value in aggregated_urgencies.items():
@@ -246,7 +279,7 @@ for key, value in aggregated_urgencies.items():
     # This is only necessary for the plot
     defuzz_plt[key] = fuzz.interp_membership(
         urgency_range,aggregated_urgencies[key], defuzz_results[key])
-print(f"\n\n    defuzz: {defuzz_results}\n\n")
+# print(f"\n\n    defuzz: {defuzz_results}\n\n")
 fig_d, (ax_n_d, ax_e_d, ax_s_d, ax_w_d) = plt.subplots(nrows=4, figsize=(10, 8))
 
 axes_d = [ax_n_d, ax_e_d, ax_s_d, ax_w_d]
@@ -256,15 +289,23 @@ for (key, value), urgency, ax, title in zip(aggregated_urgencies.items(),
                                             urgencies, axes_d, titles):
     # Draw the filled aggregated output
     ax.fill_between(urgency_range, urgency0, value,
-                    facecolor='orange', alpha=0.7)
+                    facecolor='peachpuff', alpha=0.7)
+    ax.plot(urgency_range, value, linewidth=1.5, color='k')
     # Draw a vertical line to mark the crisp output
     ax.plot([defuzz_results[key], defuzz_results[key]], [0, defuzz_plt[key]],
             'k', linewidth=1.5, alpha=0.9)
+            
     # Draw the outlines of the membership functions
     for key, value in urgency_mf.items():    
         ax.plot(urgency_range, value, linewidth=1.5, color=colors[key],
-                label=f'{key}')
+                label=f'{key}', linestyle='dashed', alpha=0.5)
+        # Cut off the redundant end of the plot
+        ax.set_xlim([0, urgency_range[-1]-0.99])
     ax.set_title(title)
+    
+# Place the legends to the right of the plots
+for ax in axes:
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.tight_layout()
 
 plt.show()
