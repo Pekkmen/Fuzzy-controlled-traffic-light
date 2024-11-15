@@ -46,13 +46,12 @@ def rule_activation(first_antec, second_antec, conseq_mf, case):
 
         # Assembling the fuzzy rule base and calculating the fuzzy membership 
         # values for the given rules
-        print("\nDEBUG\n")
+
         for i, (value1, value2, value3) in enumerate(
                 zip(first_antec_values, second_antec_values, conseq_mf_values),
                 start=1):
             rules[i] = np.fmin(np.fmin(
                 first_antec[value1], second_antec[value2]), conseq_mf[value3])
-            print(f"    {rules[i]}")
 
         # Calculating the fuzzy membership values for the output urgency fuzzy 
         # sets (the level of urgency)
@@ -89,13 +88,11 @@ def rule_activation(first_antec, second_antec, conseq_mf, case):
 
         # Assembling the fuzzy rule base and calculating the fuzzy membership 
         # values for the given rules
-        print("\nDEBUG\n")
         for i, (value1, value2, value3) in enumerate(
                 zip(first_antec_values, second_antec_values, conseq_mf_values),
                 start=1):
             rules[i] = np.fmin(np.fmin(
                 first_antec[value1], second_antec[value2]), conseq_mf[value3])
-            print(f"    {rules[i]}")
 
         # Calculating the fuzzy membership values for the output extension time 
         # fuzzy sets (the length of green phase extension)
@@ -198,7 +195,7 @@ ranges = [sum_queue_range, waiting_time_range, urgency_range, lane_queue_range,
 membership_functions = [sum_queue_mf, waiting_time_mf, urgency_mf,
                         inner_lane_queue_mf, outer_lane_queue_mf,
                         extension_time_mf]
-titles = ['INPUT: Várakozó autók összmennyiség',
+titles = ['INPUT: Várakozó autók összmennyisége',
           'INPUT: Várakozási idő',
           'OUTPUT: Várakozási időből adódó prioritásszint',
           'INPUT: Várakozó autók száma a belső sávban',
@@ -230,19 +227,19 @@ plt.tight_layout()
 # TEST VARS
 # Waiting cars in specficic lanes in each directions
 n_lane_queues = {
-    'inner': 2,
-    'outer': 5,
+    'inner': 0,
+    'outer': 9,
 }
 e_lane_queues = {
-    'inner': 8,
-    'outer': 10,
+    'inner': 9,
+    'outer': 4,
 }
 s_lane_queues = {
-    'inner': 5,
-    'outer': 0,
+    'inner': 3,
+    'outer': 2,
 }
 w_lane_queues = {
-    'inner': 9,
+    'inner': 7,
     'outer': 2,
 }
 # q_outer_n, q_outer_e, q_outer_s, q_outer_w = 5, 10, 0, 2
@@ -259,7 +256,7 @@ q_cars_n = sum(n_lane_queues.values())
 q_cars_e = sum(e_lane_queues.values())
 q_cars_s = sum(s_lane_queues.values())
 q_cars_w = sum(w_lane_queues.values())
-w_n, w_e, w_s, w_w = 60, 0, 120, 30
+w_n, w_e, w_s, w_w = 30, 60, 0, 120
 
 # THIS PART IS FOR TESTS ONLY
 # Calculate fuzzy memberships of a queue for each lane in a given direction
@@ -290,14 +287,11 @@ n_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_n)
 e_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_e)
 s_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_s)
 w_sum_queue = interpret_memberships(sum_queue_range, sum_queue_mf, q_cars_w)
-# print(f"\nDEBUG\nn_sum_queue = {n_sum_queue}\ne_sum_queue = {e_sum_queue}\n"
-#       f"s_sum_queue = {s_sum_queue}\nw_sum_queue = {w_sum_queue}\n\n")
+
 n_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_n)
 e_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_e)
 s_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_s)
 w_wait_t = interpret_memberships(waiting_time_range, waiting_time_mf, w_w)
-# print(f"\nDEBUG\nn_wait_t={n_wait_t}\ne_wait_t={e_wait_t}\n"
-#       f"s_wait_t={s_wait_t}\nw_wait_t={w_wait_t}\n\n")
 
 # Traffic urgency fuzzy membership values
 north_urgency = rule_activation(n_sum_queue, n_wait_t, urgency_mf, 'urgency')
@@ -387,19 +381,38 @@ for ax in axes:
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.tight_layout()
 
+# Need to also receive an index to print directions in Hungarian
+max_key, max_index = max(
+    enumerate(defuzz_results.items()), key=lambda x: x[1][1])[1][0], max(
+        enumerate(defuzz_results.items()), key=lambda x: x[1][1])[0]
 
-max_key = max(defuzz_results, key=defuzz_results.get)
-print(f"\nDEBUG\nThe most urgent lane is {max_key} with a value of "
-      f"{defuzz_results[max_key]}")
+# Print urgency calculation results
+sums_print = [n_sum_queue, e_sum_queue, s_sum_queue, w_sum_queue]
+ws_print = [n_wait_t, e_wait_t, s_wait_t, w_wait_t]
+directions_print = ["Észak", "Kelet", "Dél", "Nyugat"]
+print("\nAz egyes irányok fuzzy tagsági értékei:")
+for (direction_print, sum_print, w_print, urgency_print, dir) in zip(
+        directions_print, sums_print, ws_print, urgencies, directions):
+    print("-----------------------------------------------")
+    print(f"    {direction_print}:")
+    print("    várakozó autók összmennyisége alapján")
+    for key, value in sum_print.items():
+        print(f"        {key} = {value}")
+    print("    várakozási idő alapján")
+    for key, value in w_print.items():
+        print(f"        {key} = {value}")
+    print(f"\n    ez alapján a prioritás fuzzy tagsági értéi:")
+    for key, value in urgency_print.items():
+        print(f"        {key} = {max(value)}")
+    print(f"\n    az összesített következtetés defuzzifikált eredménye:")
+    print(f"        {defuzz_results[dir]}")
+print(f"\n\nA következő irány kapja a zöld lámpát: {directions_print[max_index]}")
 
 # Calculate fuzzy memberships of lane queues for the most urgent direction
 inner_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
                                     lane_queues[max_key]['inner'])
 outer_queue = interpret_memberships(lane_queue_range, inner_lane_queue_mf,
                                     lane_queues[max_key]['outer'])
-print("\nDEBUG\n")
-print(f"    inner_queue = {inner_queue}")
-print(f"    outer_queue = {outer_queue}")
 
 # Green phase extension fuzzy membership values
 extension = rule_activation(inner_queue, outer_queue, extension_time_mf,
@@ -471,4 +484,15 @@ for key, value in aggregated_extensions.items():
 ax_ext_def.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 plt.tight_layout()
 
+lanes_title_print = ["Belső sáv", "Külső sáv"]
+lanes_print = [inner_queue, outer_queue]
+print("\nA kiválasztott irány sávjainak fuzzy tagsági értékei:")
+for (lane_title, lane) in zip(lanes_title_print, lanes_print):
+    print("-----------------------------------------------")
+    print(f"    {lane_title}:")
+    print("    várakozó autók mennyisége alapján")
+    for lane_mf in lane.items():
+        print(f"        {lane_mf[0]} = {lane_mf[1]}")
+print(f"\nA kiválasztott irány zöld lámpa időtartamát "
+      f"{max(defuzz_ext_results.values())} másodperccel kell meghosszabbítani.")
 plt.show()
